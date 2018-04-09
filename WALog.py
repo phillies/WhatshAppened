@@ -19,7 +19,7 @@ class WALog:
     unknown - message that could not be identified
     """
 
-    def __init__(self, logfile=None, language='de'):
+    def __init__(self, logfile=None, language='de', exporter_name='Phil'):
         self._logfile = logfile
         self.data = {}
         self._language = language
@@ -27,7 +27,18 @@ class WALog:
             'language': 'de',
             'timestamp': r'[\u200e][0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9]',
             'timestamp length': 18,
-            'no colon': r'[^:]*'
+            'header length': 21,
+            'no colon': r'[^:]*',
+            'topic': r'has?t den Betreff ' ,
+            'security': r'Die Sicherheitsnummer',
+            'picture': r'has?t das Gruppenbild ',
+            'add': r'has?t.*hinzugefügt',
+            'quit': r'hat die Gruppe verlassen',
+            'remove': r'wurde entfernt',
+            'you': 'Du',
+            'exporter': exporter_name,
+            'stripchars': u'\u200e\u202a\u202c '
+
         }
 
     
@@ -43,19 +54,28 @@ class WALog:
         self._read_log(encoding=encoding)
         if verbose:
             print('Read', len(self._raw), 'lines from', self._logfile )
+
         self._merge_multiline_messages()
         if verbose:
             print('Merged into', len(self._preproc), 'messages' )
+
         self._parse_messages()
         if verbose:
             print('Parsing completed' )
 
     def _read_log(self, encoding='utf-8'):
+        """Reads the content of the log file and stores it as raw data. Uses utf-8 encoding by default.
+        """
         self._raw = None
         with open(self._logfile, 'r', encoding=encoding) as f:
             self._raw = f.readlines()
 
     def _merge_multiline_messages(self):
+        """Merges multi-line messages into one string/array entry.
+
+        Checks for each line that starts with a timestamp if the following line starts with a timestamp, too. If not it adds the line to the current one
+        and repeats until a timestamp is found ot the eand of the lines is reached.
+        """
         if self._raw is None:
             raise ValueError('Raw data not loaded')
 
@@ -81,48 +101,48 @@ class WALog:
             #TODO: refactor start
             data['timestamp'].append(datetime.datetime(2000+int(line[7:9]), int(line[4:6]), int(line[1:3]), int(line[13:15]), int(line[16:18])))
             
-            msg = line[21:]
-            if not regex.search(r'[^:]*has?t den Betreff ', msg) is None:
-                pos = regex.search(r' has?t den Betreff ', msg)
-                name = msg[:pos.start()].strip(u'\u200e\u202a\u202c')
-                if name == 'Du':
-                    name = 'Phil'
-                data['who'].append(name)
+            msg = line[self._regexp['header length']:]
+            if not regex.search(self._regexp['no colon']+self._regexp['topic'], msg) is None:
+                pos = regex.search(self._regexp['topic'], msg)
+                name = msg[:pos.start()].strip(self._regexp['stripchars'])
+                if name == self._regexp['you']:
+                    name = self._regexp['exporter']
+                data['who'].append(name.strip(self._regexp['stripchars']))
                 data['message'].append(msg)
                 data['type'].append('topic')
                 
-            elif not regex.search(r'[^:]*Die Sicherheitsnummer', msg) is None:
+            elif not regex.search(self._regexp['no colon']+self._regexp['security'], msg) is None:
                 data['who'].append('System')
                 data['message'].append(msg)
                 data['type'].append('security')
                 
-            elif not regex.search(r'[^:]* has?t das Gruppenbild ', msg) is None:
-                pos = regex.search(r' has?t das Gruppenbild ', msg)
-                name = msg[:pos.start()].strip(u'\u200e\u202a\u202c')
-                if name == 'Du':
-                    name = 'Phil'
-                data['who'].append(name)
+            elif not regex.search(self._regexp['no colon']+self._regexp['picture'], msg) is None:
+                pos = regex.search(self._regexp['picture'], msg)
+                name = msg[:pos.start()].strip(self._regexp['stripchars'])
+                if name == self._regexp['you']:
+                    name = self._regexp['exporter']
+                data['who'].append(name.strip(self._regexp['stripchars']))
                 data['message'].append(msg)
                 data['type'].append('picture')
                 
-            elif not regex.search(r'[^:]*has?t.*hinzugefügt', msg) is None:   
+            elif not regex.search(self._regexp['no colon']+self._regexp['add'], msg) is None:   
                 data['who'].append('System')
                 data['message'].append(msg)
                 data['type'].append('add')      
                 
-            elif not regex.search(r'[^:]*hat die Gruppe verlassen', msg) is None:   
+            elif not regex.search(self._regexp['no colon']+self._regexp['quit'], msg) is None:   
                 data['who'].append('System')
                 data['message'].append(msg)
                 data['type'].append('quit')  
             
-            elif not regex.search(r'[^:]*wurde entfernt', msg) is None:   
+            elif not regex.search(self._regexp['no colon']+self._regexp['remove'], msg) is None:   
                 data['who'].append('System')
                 data['message'].append(msg)
                 data['type'].append('remove')   
             
             elif msg.find(':') >= 0: 
                 name, txt = msg.split(':', maxsplit=1)
-                data['who'].append(name.strip(u'\u200e\u202a\u202c'))
+                data['who'].append(name.strip(self._regexp['stripchars']))
                 data['message'].append(txt)
                 data['type'].append('message')      
 

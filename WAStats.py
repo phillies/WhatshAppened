@@ -9,6 +9,8 @@ class WAStats:
     """
 
     def __init__(self, log):
+        if log is None:
+            raise ValueError('log object cannot be None')
         self._log = log
         
     def show_stats(self):
@@ -20,3 +22,7 @@ class WAStats:
         print(set(self._log.data['who']))
         print('Message types:')
         print(set(self._log.data['type']))
+        print('Messages per participant:')
+
+        for who in set(self._log.data['who']):
+            print(who, ':', self._log.data['who'].count(who))
