@@ -1,7 +1,7 @@
 """
 
 """
-import datetime, regex
+import datetime, regex, random, string
 
 class WALog:
     """WhatshAppened Logging class
@@ -21,7 +21,7 @@ class WALog:
 
     def __init__(self, logfile=None, language='de', exporter_name='Phil'):
         self._logfile = logfile
-        self.data = {}
+        self.data = {'timestamp':[], 'who':[], 'message':[], 'type': []}
         self._language = language
         self._regexp = {
             'language': 'de',
@@ -154,6 +154,41 @@ class WALog:
             #TODO: refactor end
         self.data = data
         self._preproc = None
+
+
+    def rename_sender(self, from_name, to_name, verbose=False):
+        """Rename a person in the message log, e.g. if someone changed his/her
+        number and you need to merge both numbers to one name.
+        """
+        num_occurences = self.data['who'].count(from_name)
+        
+        if verbose:
+            print('Number of matches for', from_name, ':', num_occurences)
+        
+        index = 0
+        for _ in range(num_occurences): 
+            index = self.data['who'].index(from_name, index)
+            self.data['who'][index] = to_name
+            index += 1
+
+    def anonymize(self, last_peek=False):
+        """Anonymizes the data set by replacing all sender names by random names
+        and searches for sender names in message content.
+        Attention: this is not a data security sufficient anonymization. If the
+        sender is named "John Doe" it will not replace occurences like "Mr. Doe",
+        "John", or nicknames like "Johnny" or abbreviations like "JD".
+
+        last_peek : prints which name is replaced by which random string
+        """
+        sender = set(self.data['who'])
+        new_sender = []
+        for _, from_name in enumerate(sender):
+            to_name = ''.join(random.SystemRandom().choice(string.ascii_lowercase) for _ in range(10))
+            while to_name in new_sender:
+                to_name = ''.join(random.SystemRandom().choice(string.ascii_lowercase) for _ in range(10))
+            if last_peek:
+                print(from_name, to_name)
+            self.rename_sender(from_name, to_name)
 
 
     
