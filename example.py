@@ -12,6 +12,9 @@ if __name__ == '__main__':
     
     log.anonymize(last_peek=True)
 
+    log.remove_unwanted_content(drop_matching_mesages=True)
+    print(log.data['message'])
+
     print('Loading stats')
     stat = WAStats(log)
     stat.show_stats()

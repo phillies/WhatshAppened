@@ -1,7 +1,7 @@
 """
 
 """
-import datetime, regex, random, string
+import datetime, regex, random, string, warnings
 
 class WALog:
     """WhatshAppened Logging class
@@ -19,7 +19,7 @@ class WALog:
     unknown - message that could not be identified
     """
 
-    def __init__(self, logfile=None, language='de', exporter_name='Phil'):
+    def __init__(self, logfile=None, parse=False, language='de', exporter_name='Phil'):
         self._logfile = logfile
         self.data = {'timestamp':[], 'who':[], 'message':[], 'type': []}
         self._language = language
@@ -37,9 +37,12 @@ class WALog:
             'remove': r'wurde entfernt',
             'you': 'Du',
             'exporter': exporter_name,
-            'stripchars': u'\u200e\u202a\u202c '
+            'stripchars': u'\u200e\u202a\u202c \n',
+            'remove message content': [r'<Medien weggelassen>']
 
         }
+        if parse:
+            self.parse()
 
     
     def parse(self, logfile=None, verbose=False, encoding='utf-8'):
@@ -143,7 +146,7 @@ class WALog:
             elif msg.find(':') >= 0: 
                 name, txt = msg.split(':', maxsplit=1)
                 data['who'].append(name.strip(self._regexp['stripchars']))
-                data['message'].append(txt)
+                data['message'].append(txt.strip(self._regexp['stripchars']))
                 data['type'].append('message')      
 
             else:
@@ -189,6 +192,36 @@ class WALog:
             if last_peek:
                 print(from_name, to_name)
             self.rename_sender(from_name, to_name)
+    
+    def remove_unwanted_content(self, drop_matching_mesages=False):
+        """ Removes text as defined in _regexp['remove message content'], optionally
+        drops message completely.
+        """
+
+        if self.data is None:
+            raise ValueError('data cannot be None, please parse logfile first.')
+
+        for regexpr in self._regexp['remove message content']:
+            for index, item in enumerate(self.data['message']):
+                match = regex.search(regexpr, item)
+                if not match is None:
+                    if drop_matching_mesages:
+                        self._drop_message(index)
+                    else:
+                        self.data['message'][index] = item[:match.start()] + item[match.end():]
+        
+    
+    def _drop_message(self, index):
+        """Deletes a message from the log
+        """
+        
+        if index < len(self.data['who']):
+            self.data['who'].pop(index)
+            self.data['timestamp'].pop(index)
+            self.data['message'].pop(index)
+            self.data['type'].pop(index)
+        else:
+            warnings.warn('Tried to delete a message with index out of bounds.')
 
 
     

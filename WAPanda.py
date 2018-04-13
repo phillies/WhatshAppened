@@ -75,3 +75,9 @@ class WAPanda(WAStats):
             for i in range(min(number_top, (emojis>0).sum())):
                 print('#{}: {}\t{:.2%}'.format(i+1, emojis.index[i], emojis[emojis.index[i]]))
             print(30*'-'+'\n')         
+    
+    def add_message_length(self):
+        if self._df is None:
+            raise ValueError('DataFrame cannot be None')
+        
+        self._df['message length'] = self._df['message'].str.len()
