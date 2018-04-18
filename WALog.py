@@ -25,9 +25,8 @@ class WALog:
         self._language = language
         self._regexp = {
             'language': 'de',
-            'timestamp': r'[\u200e][0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9]',
-            'timestamp length': 18,
-            'header length': 21,
+            'timestamp': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9]',
+            'datetime format': '%d.%m.%y um %H:%M',
             'no colon': r'[^:]*',
             'topic': r'has?t den Betreff ' ,
             'security': r'Die Sicherheitsnummer',
@@ -86,7 +85,7 @@ class WALog:
         i = 0
         while i < len(self._raw):
             msg = self._raw[i]
-            while i < (len(self._raw)-1) and regex.match(self._regexp['timestamp'], self._raw[i+1][:self._regexp['timestamp length']]) is None:
+            while i < (len(self._raw)-1) and regex.search(self._regexp['timestamp'], self._raw[i+1]) is None:
                 i += 1
                 msg += self._raw[i]
             self._preproc.append(msg)
@@ -102,9 +101,15 @@ class WALog:
             line = self._preproc[i]
 
             #TODO: refactor start
-            data['timestamp'].append(datetime.datetime(2000+int(line[7:9]), int(line[4:6]), int(line[1:3]), int(line[13:15]), int(line[16:18])))
+            match = regex.search(self._regexp['timestamp'], line)
+            if match is None:
+                raise ValueError('Cannot find timestamp in ' + line)
             
-            msg = line[self._regexp['header length']:]
+            #For the conversion to datetime the leading unicode char for RTL must be stripped
+            timestamp = datetime.datetime.strptime(line[:match.end()].strip(self._regexp['stripchars']), self._regexp['datetime format'])
+            data['timestamp'].append(timestamp)
+            
+            msg = line[match.end():]
             if not regex.search(self._regexp['no colon']+self._regexp['topic'], msg) is None:
                 pos = regex.search(self._regexp['topic'], msg)
                 name = msg[:pos.start()].strip(self._regexp['stripchars'])

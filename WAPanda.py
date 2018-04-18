@@ -81,3 +81,10 @@ class WAPanda(WAStats):
             raise ValueError('DataFrame cannot be None')
         
         self._df['message length'] = self._df['message'].str.len()
+    
+    def add_word_count(self):
+        if self._df is None:
+            raise ValueError('DataFrame cannot be None')
+
+        # This is a first approximation that only counts how many strings consisting of [a-zA-Z0-9] are included. Needs to be revamped.
+        self._df['word count'] = self._df['message'].str.count(r'\w+')
