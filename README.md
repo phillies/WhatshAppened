@@ -6,6 +6,11 @@ Under development.
 Current version: alpha-04
 
 Recent changes:
+alpha-04.2
+- WALog bugfix parser
+- WAPanda resampling
+- WAPanda pretty print now aligns emojis
+
 alpha-04.1
 - WALog datetime parsing now works with strptime() pattern
 - WALog timestamp regex bug fixed (missing RTL char lead to false multi line detection)

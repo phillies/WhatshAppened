@@ -27,6 +27,7 @@ class WALog:
             'language': 'de',
             'timestamp': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9]',
             'datetime format': '%d.%m.%y um %H:%M',
+            'header': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9] - ',
             'no colon': r'[^:]*',
             'topic': r'has?t den Betreff ' ,
             'security': r'Die Sicherheitsnummer',
@@ -109,6 +110,7 @@ class WALog:
             timestamp = datetime.datetime.strptime(line[:match.end()].strip(self._regexp['stripchars']), self._regexp['datetime format'])
             data['timestamp'].append(timestamp)
             
+            match = regex.search(self._regexp['header'], line)
             msg = line[match.end():]
             if not regex.search(self._regexp['no colon']+self._regexp['topic'], msg) is None:
                 pos = regex.search(self._regexp['topic'], msg)
