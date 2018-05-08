@@ -25,9 +25,9 @@ class WALog:
         self._language = language
         self._regexp = {
             'language': 'de',
-            'timestamp': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9]',
-            'datetime format': '%d.%m.%y um %H:%M',
-            'header': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9] um [0-2][0-9][:][0-5][0-9] - ',
+            'timestamp': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9]( um |\, )[0-2][0-9][:][0-5][0-9]',
+            'datetime formats': ['%d.%m.%y um %H:%M', '%d.%m.%y, %H:%M'],
+            'header': r'[\u200e]?[0-3][0-9][.][0-1][0-9][.][0-2][1-9]( um |\, )[0-2][0-9][:][0-5][0-9] - ',
             'no colon': r'[^:]*',
             'topic': r'has?t den Betreff ' ,
             'security': r'Die Sicherheitsnummer',
@@ -107,7 +107,17 @@ class WALog:
                 raise ValueError('Cannot find timestamp in ' + line)
             
             #For the conversion to datetime the leading unicode char for RTL must be stripped
-            timestamp = datetime.datetime.strptime(line[:match.end()].strip(self._regexp['stripchars']), self._regexp['datetime format'])
+            format_found = False
+            for date_format_variant in self._regexp['datetime formats']:
+                try:
+                    timestamp = datetime.datetime.strptime(line[:match.end()].strip(self._regexp['stripchars']), date_format_variant)
+                    format_found = True
+                    break
+                except:
+                    pass
+            if format_found == False:
+                raise ValueError('No valid datetime format variant found. Please check "datetime formats" variants in regex')
+
             data['timestamp'].append(timestamp)
             
             match = regex.search(self._regexp['header'], line)

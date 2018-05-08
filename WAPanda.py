@@ -18,15 +18,15 @@ class WAPanda(WAStats):
             print('No DataFrame, nothing to show.')
             return
         
-        is_message = self._df['type'] == 'message'
-        print(self._df[is_message]['who'].value_counts())
+        is_message = self._df.type == 'message'
+        print(self._df[is_message].who.value_counts())
 
     def _get_occurences(self, emojis, messages):
         occurences = np.zeros(len(emojis), dtype=np.int64)
         for i in emojis.index:
             index = emojis.index[i]
             try:
-                occurences[i] = messages['message'].str.count(emojis['emojis'][index]).sum()
+                occurences[i] = messages.message.str.count(emojis.emojis[index]).sum()
             except:
                 occurences[i] = 0
 
@@ -44,19 +44,19 @@ class WAPanda(WAStats):
         
         self._emojis = pd.DataFrame({'emojis': emojis})
         
-        is_message = self._df['type'] == 'message'
+        is_message = self._df.type == 'message'
         messages = self._df[is_message]        
         senders = messages.who.unique()
 
         for name in senders:
-            self._emojis[name] = self._get_occurences( self._emojis, messages[messages['who'] == name])
-        self._emojis.index = self._emojis['emojis']
+            self._emojis[name] = self._get_occurences( self._emojis, messages[messages.who == name])
+        self._emojis.index = self._emojis.emojis
 
     def top_emojis( self, number_top=3, compact=False ):
         if self._emojis is None:
             self.emoji_stats()
         
-        is_message = self._df['type'] == 'message'
+        is_message = self._df.type == 'message'
         messages = self._df[is_message]
         senders = messages.who.unique()
 
