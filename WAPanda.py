@@ -4,8 +4,11 @@ from WALog import WALog
 from WAStats import WAStats
 
 class WAPanda(WAStats):
-    """WhatshAppened pandas class
-    Data analysis class for WhatshAppened
+    """
+    WhatshAppened pandas class
+    
+    Data analysis class for WhatshAppened. Uses the pandas framework for internal data handling
+    and analysis. Takes a WALog object as input for constructor.
     """
 
     def __init__(self, log):
@@ -14,6 +17,7 @@ class WAPanda(WAStats):
         self._emojis = None
 
     def show_stats(self):
+
         if self._df is None:
             print('No DataFrame, nothing to show.')
             return
@@ -33,6 +37,25 @@ class WAPanda(WAStats):
         return pd.Series(occurences, index=emojis.index)
 
     def emoji_stats(self, emoji_file='emojis.txt'):
+        """
+        Emoji statistics
+
+        Reads a list of emojis from a text file, counts all the emojis in all messages, and stores the results 
+        in a DataFrame df. 
+        df.emojis is the column of all emojis and the index of the DataFrame
+        df[sendername] is the number of occurences of each emoji in messsages of sendername
+
+        Parameters
+        ----------
+        emoji_file : string
+            file name of emoji file
+
+        Returns
+        -------
+        DataFrame
+            Emojis DataFrame with all emojis and their occurences per sender
+
+        """
         if emoji_file is None:
             raise ValueError('emoji file name cannot be None')
         emojis = []
@@ -52,7 +75,23 @@ class WAPanda(WAStats):
             self._emojis[name] = self._get_occurences( self._emojis, messages[messages.who == name])
         self._emojis.index = self._emojis.emojis
 
+        return self._emojis
+
     def top_emojis( self, number_top=3, compact=False ):
+        """
+        Prints the top n emojis per sender
+
+        Pretty prints the top n emojis per sender either with n emojis in one line per sender (compact mode), or with
+        one emoji per line per sender, including the relative usage in % of this emoji among all emojis.
+
+        Parameters
+        ----------
+        number_top : int
+            Number of emojis to print per sender
+        compact : bool
+            Print in compact (True) or verbose (False) mode
+
+        """
         if self._emojis is None:
             self.emoji_stats()
         
@@ -97,24 +136,59 @@ class WAPanda(WAStats):
         self._df['word count'] = self._df.message.str.count(r'\w+')
 
     def calc_message_stats(self):
+        """
+        Calculate message statistics
+
+        Calculates the message lenghts (number of characters) and word count per sender, both as absolute and average number.
+        df['message length'] for absolute number of characters
+        df['average message length'] for average number of characters per message
+        df['word count'] for total number of words
+        df['average word count'] for average number of words per message
+
+        Returns
+        -------
+        DataFrame
+            Statistics DataFrame
+
+        """
         if self._df is None:
             raise ValueError('DataFrame cannot be None')
 
         self._add_message_length()
         self._add_word_count()
-        
+
         is_message = self._df.type == 'message'
         messages = self._df[is_message]
         self._message_stats = messages[['who', 'message length', 'word count']].groupby('who').aggregate(['sum', 'count'])
-        self._message_stats['average length'] = self._message_stats['message length']['sum']/self._message_stats['message length']['count']
+        self._message_stats['average message length'] = self._message_stats['message length']['sum']/self._message_stats['message length']['count']
         self._message_stats['average word count'] = self._message_stats['word count']['sum']/self._message_stats['word count']['count']
 
-    def resample_messages(self, frequency='D'):
+        return self._message_stats
+
+    def resample_messages(self, frequency='D', aggregate='count'):
+        """
+        Summary line.
+
+        Extended description of function.
+
+        Parameters
+        ----------
+        arg1 : int
+            Description of arg1
+        arg2 : str
+            Description of arg2
+
+        Returns
+        -------
+        int
+            Description of return value
+
+        """
         if self._df is None:
             raise ValueError('DataFrame cannot be None')
 
         is_message = self._df.type == 'message'
         messages = self._df[is_message]
-        spiketrain = messages.groupby('timestamp').aggregate('count').who.resample(frequency).sum()
+        spiketrain = messages.groupby('timestamp').aggregate(aggregate).who.resample(frequency).sum()
         return spiketrain
 

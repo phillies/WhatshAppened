@@ -3,10 +3,14 @@ Analytics tool for WhatsApp chat exports
 
 Under development.
 
-Current version: alpha-06
+Current version: alpha-06.1
 
 Recent changes:
-alpha-0
+alpha06.1
+- minox fixes
+- extended documentation 
+
+alpha-06
 - Message statistics for WAPanda added
 - Examples added to jupyter notebook
 
@@ -34,4 +38,4 @@ alpha-03
 - added emoji analytics for WAPanda
 - added anonymizing for WALog
 
-Works only for German exports, statistics are dull, documentation nonexistent. But hey, already some examples. Come back in a few weeks.
+Works only for German exports, statistics are dull, documentation almost nonexistent. But hey, already some examples. Come back in a few weeks.
