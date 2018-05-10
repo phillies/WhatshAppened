@@ -83,18 +83,31 @@ class WAPanda(WAStats):
                 print('#{}: {}\t{:.2%}'.format(i+1, emojis.index[i], emojis[emojis.index[i]]))
             print(30*'-'+'\n')         
     
-    def add_message_length(self):
+    def _add_message_length(self):
         if self._df is None:
             raise ValueError('DataFrame cannot be None')
         
         self._df['message length'] = self._df.message.str.len()
     
-    def add_word_count(self):
+    def _add_word_count(self):
         if self._df is None:
             raise ValueError('DataFrame cannot be None')
 
         # This is a first approximation that only counts how many strings consisting of [a-zA-Z0-9] are included. Needs to be revamped.
         self._df['word count'] = self._df.message.str.count(r'\w+')
+
+    def calc_message_stats(self):
+        if self._df is None:
+            raise ValueError('DataFrame cannot be None')
+
+        self._add_message_length()
+        self._add_word_count()
+        
+        is_message = self._df.type == 'message'
+        messages = self._df[is_message]
+        self._message_stats = messages[['who', 'message length', 'word count']].groupby('who').aggregate(['sum', 'count'])
+        self._message_stats['average length'] = self._message_stats['message length']['sum']/self._message_stats['message length']['count']
+        self._message_stats['average word count'] = self._message_stats['word count']['sum']/self._message_stats['word count']['count']
 
     def resample_messages(self, frequency='D'):
         if self._df is None:

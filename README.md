@@ -3,9 +3,13 @@ Analytics tool for WhatsApp chat exports
 
 Under development.
 
-Current version: alpha-05
+Current version: alpha-06
 
 Recent changes:
+alpha-0
+- Message statistics for WAPanda added
+- Examples added to jupyter notebook
+
 alpha-05
 - jupyter/ipython notebook with examples added
 - minor refactoring
